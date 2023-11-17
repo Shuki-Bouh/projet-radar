@@ -16,7 +16,7 @@ def serialConfig(configFile):
 
     # Windows
     CLIport = serial.Serial('COM6', 115200)
-    Dataport = serial.Serial('COM5', 921600)
+    Dataport = serial.Serial('COM7', 921600)
 
     # Read the configuration file and send it to the board
     config = [line.rstrip('\r\n') for line in open(configFile)]
@@ -25,19 +25,26 @@ def serialConfig(configFile):
         print(i)
         time.sleep(0.01)
     x=[]
-    t=[t for t in range(1000)]
-    for i in range(1000):
+    for i in range(10000):
         data = Dataport.read()
         data += Dataport.read()
         data += Dataport.read()
         data += Dataport.read()
         x.append(struct.unpack('f', data))
+        print(x[i])
 
-    t = np.arange(1000)
+    t = np.arange(10000)
+
+
+
+
 
     freq = fft.fftfreq(t.shape[-1])
     X = fft.fft(x)
-    plt.plot(t,X.real)
+    plt.figure()
+    plt.plot(freq, np.abs(X))
+    plt.figure()
+    plt.plot(np.real(X), np.imag(X))
 
     plt.show()
     return CLIport #, Dataport

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link href="découpage.css" rel="stylesheet">
+    <title>Répartition travail</title>
+</head>
+<body>
+
+<div id="sim">
+    <h1>Simulation : Antoine / Isabelle</h1>
+    <p>
+        <b>Entrée : </b>Paramètre radars et cible (surface équivalente radar ?)
+        <ul>
+            <li>Bande passante</li>
+            <li>Fréquence de départ</li>
+            <li>Durée émission chirp</li>
+            <li>Durée entre deux chirps</li>
+            <li>Nb antennes actives</li>
+            <li>Pour les mimo, ajouter offset de phase (sur antenne émission)</li>
+            <li>Position Tx et objet</li>
+            <li>Fréquence d'échantillonnage</li>
+            <li>SNR ?</li>
+            <li>Gain / puissance ?</li>
+        </ul>
+    </p>
+    <p>
+        <b>Sortie : </b>Un tableau de valeurs par Rx correspondant à un signal</b>
+    </p>
+    </div>
+
+<div id="trai">
+    <h1>Traitement du signal : Julien / Alban<img src="capture_cube3d_10_1109_ACCESS_2021_3137387.png" width="30%" height="30%"></h1>
+    <p>
+        <b>Entrée : </b>Signal de la simulation
+    </p>
+    <p>
+        <b>Objectifs :</b>
+            <ul>
+                <li>range</li>
+                <li>fft 2D (range et vitesse)</li>
+                <li>Angle avec une Tx et 4 Rx</li>
+                <li>mimo</li>
+            </ul>
+</div>
+
+<div id="carte">
+    <h1>Cartes réelles</h1>
+    <p>
+        <b>Objectifs :</b>
+        <ul>
+            <li>Installer tous les drivers pour faire fonctionner l'ensemble</li>
+            <li>Comprendre les paramètres de config</li>
+            <li>Traiter les bytes reçus pour obtenir les données du signal (ils ont fait un encodage bizarre des données)</li>
+        </ul>
+    </p>
+</div>
+
+</body>
+</html>
