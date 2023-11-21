@@ -1,6 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from parametre import *
+import parametre as prm
 class Tx:
 
     def __init__(self, x, y, virtual=False):
@@ -50,17 +49,16 @@ class Board:
 
 class Simulation:
 
-    def __init__(self, T, Tc, Te, fc, B):  # attention on veut Te divisible par Tc et Tc divisible par Te
+    def __init__(self):  # attention on veut Te divisible par Tc et Tc divisible par Te
         self.board = Board()
         self.targets = []
-        self.Tc = Tc
-        self.Te = Te
-        self.B = B
-        self.fc = fc
-        self.S = B / Tc
-        self.c = 3 * 10 ** 8
-        self.T = T
-        self.Mimo = Mimo
+        self.Tc = prm.Tc
+        self.Te = prm.Tc / prm.Ns
+        self.B = prm.B
+        self.fc = prm.fc
+        self.S = prm.B / prm.Tc
+        self.c = prm.c
+        self.T = prm.Tc * prm.Nc
 
     def addTrg(self, ltargets):  #ltargets de la forme ltargets = [[x1, y1, vx1, vy1], [x2, y2, vx2, vy2], ...]
         for elt in ltargets:
@@ -88,7 +86,7 @@ class Simulation:
     def record(self):
         ns = int(self.Tc / self.Te)  # nombre de samples par chirp, dimension x
         nc = int(self.T / self.Tc)  # nombre de de chirps, dimension y
-        nrx = self.nchan  # nombre de channels, dimension z
+        nrx = self.board.nchan  # nombre de channels, dimension z
         xif = np.zeros((ns, nc, nrx), dtype=complex)
         for j in range(nc):
             t = np.linspace(j*self.Tc, (j+1)*self.Tc, ns)
@@ -117,7 +115,3 @@ class Simulation:
                 file.write('\n')
 
         return xif
-
-
-if __name__ == '__main__':
-    print('Hello word')

@@ -6,20 +6,18 @@ Created on Fri Nov 17 13:44:35 2023
 """
 import numpy as np
 import matplotlib.pyplot as plt
-import parametre
+import parametre as prm
 
-def range_calculation(cube):#,param_radar):
-#    B = param_radar.bandwith
-#    c = param_radar.celerity
-#    Fs = param_radar.sampling_rate
+def range_calculation(cube):
+    B = prm.B
+    S = prm.S
+    c = prm.c
+    Fs = prm.fs
     """ prend en entré un cube correspondant  """
-    B = 4
-    c = 3
-    Fs = 100
     try:    
         ff1 = np.fft.fft(cube, axis=1)
         freq = np.fft.fftfreq(cube.shape[0], d=1/Fs)
-        rang = freq * c / (2 * B)
+        rang = freq * c / (2 * S)
         ff2 = np.mean(ff1, axis=-1)  # Moyenne selon les antennes de réception
         ff3 = np.abs(np.mean(ff2, axis=-1))  # Moyenne selon les chirps et valeur absolue
         
@@ -28,7 +26,7 @@ def range_calculation(cube):#,param_radar):
         print(f"Erreur: {e}")
         return None
 
-    plt.plot(rang, ff_norm)
+    plt.plot(np.fft.fftshift(rang), np.fft.fftshift(ff_norm))
     plt.title("Radar Range Profile")
     plt.xlabel("Range (meters)")
     plt.ylabel("Normalized Intensity")
