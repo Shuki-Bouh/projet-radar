@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from parametre import *
-
 class Tx:
 
     def __init__(self, x, y, virtual=False):
@@ -27,10 +26,11 @@ class Target:
 
 class Board:
 
-    def __init__(self):
+    def __init__(self, Mimo=False):
         self.rx = []
         self.tx = []
-        self.channels = []
+        self.Mimo = Mimo
+        self.nchan = 0
 
     def add(self, ltx, lrx):  #ltx et lrx de la forme ltx = [[x1, y1], [x2, y2], ...]
         for elt in ltx:
@@ -39,10 +39,18 @@ class Board:
         for elt in lrx:
             self.rx.append(Rx(elt[0], elt[1]))
 
+        if self.Mimo :
+            self.addMimo()
+
+        self.nchan = len(self.rx)
+
+    def addMimo(self):
+        pass
+
 
 class Simulation:
 
-    def __init__(self, T, Tc, Te, fc, B, Mimo=False):  # attention on veut Te divisible par Tc et Tc divisible par Te
+    def __init__(self, T, Tc, Te, fc, B):  # attention on veut Te divisible par Tc et Tc divisible par Te
         self.board = Board()
         self.targets = []
         self.Tc = Tc
@@ -53,10 +61,6 @@ class Simulation:
         self.c = 3 * 10 ** 8
         self.T = T
         self.Mimo = Mimo
-        if Mimo:
-            # self.board.add()
-            pass
-        self.nchan = len(self.board.rx)
 
     def addTrg(self, ltargets):  #ltargets de la forme ltargets = [[x1, y1, vx1, vy1], [x2, y2, vx2, vy2], ...]
         for elt in ltargets:
@@ -68,8 +72,7 @@ class Simulation:
             trg.y += trg.vy*self.Tc
 
     def process(self):  # rempli self.τs avec tout les τ associés
-        self.nchan = len(self.board.rx)
-        τs = np.zeros((self.nchan, len(self.board.tx) * len(self.targets)))
+        τs = np.zeros((self.board.nchan, len(self.board.tx) * len(self.targets)))
         i = 0
         for rx in self.board.rx:
             j = 0
