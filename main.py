@@ -8,14 +8,16 @@ if __name__ == "__main__":
     simulation = sml.Simulation()
 
     ltx = [[0, 0]]
-    lrx = [[-1, 0]]
+    lrx = [[0, 0]]
     simulation.board.add(ltx, lrx)
 
-    ltargets = [[0, 5, 0, 0]]
+    ltargets = [[0, 1.5, 0, 0]]
     simulation.addTrg(ltargets)
     print(simulation.board.rx)
     print(simulation.board.tx)
     print(simulation.targets)
+
+    print(simulation.process())
 
     xif = simulation.simulation()
 

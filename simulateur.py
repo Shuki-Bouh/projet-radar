@@ -53,7 +53,7 @@ class Simulation:
         self.board = Board()
         self.targets = []
         self.Tc = prm.Tc
-        self.Te = prm.Tc / prm.Ns
+        self.Te = 1/prm.fs
         self.B = prm.B
         self.fc = prm.fc
         self.S = prm.B / prm.Tc
