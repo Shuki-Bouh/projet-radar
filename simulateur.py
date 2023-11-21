@@ -4,17 +4,9 @@ import matplotlib.pyplot as plt
 
 class Tx:
 
-    def __init__(self, x, y, T, Tc, B, fc):
+    def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.T = T
-        self.Tc = Tc
-        self.B = B
-        self.S = B / Tc
-        self.fc = fc
-
-    def transmit(self):
-        pass
 
 
 class Rx:
@@ -22,9 +14,6 @@ class Rx:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-
-    def receave(self):
-        pass
 
 
 class Target:
@@ -34,12 +23,6 @@ class Target:
         self.vx = vx
         self.vy = vy
 
-    def reflect(self):
-        pass
-
-    def move(self):
-        pass
-
 
 class Board:
 
@@ -48,9 +31,9 @@ class Board:
         self.tx = []
         self.channels = []
 
-    def add(self, ltx, lrx, T, Tc, B):
+    def add(self, ltx, lrx):  #ltx et lrx de la forme ltx = [[x1, y1], [x2, y2], ...]
         for elt in ltx:
-            self.rx.append(Tx(elt[0], elt[1], T, Tc, B))
+            self.rx.append(Tx(elt[0], elt[1]))
 
         for elt in lrx:
             self.rx.append(Rx(elt[0], elt[1]))
@@ -59,7 +42,7 @@ class Board:
 
 class Simulation:
 
-    def __init__(self, T, Te, Tc, fc, B):
+    def __init__(self, T, Te, Tc, fc, B, Mimo=False):
         self.board = Board
         self.targets = []
         self.Tc = Tc
@@ -69,20 +52,22 @@ class Simulation:
         self.S = B / Tc
         self.c = 3 * 10 ** 8
         self.T = T
-        self.cnt = 0
-        self.τs = np.zeros((len(self.board.rx), len(self.board.tx) * len(self.targets)))
+        self.Mimo = Mimo
+        if Mimo:
+            # self.board.add()
+        self.nchan = len(self.board.rx)
 
-    def add(self, ltargets):
+    def addtrg(self, ltargets):  #ltargets de la forme ltargets = [[x1, y1, vx1, vy1], [x2, y2, vx2, vy2], ...]
         for elt in ltargets:
-            self.targets.append(Target(elt[0], elt[1], elt[2]))
+            self.targets.append(Target(elt[0], elt[1], elt[2], elt[3]))
 
     def move(self):
         for trg in self.targets:
             trg.x += trg.vx*self.Tc
             trg.y += trg.vy*self.Tc
 
-
-    def process(self):
+    def process(self):  # rempli self.τs avec tout les τ associés
+        τs = np.zeros((self.nchan, len(self.board.tx) * len(self.targets)))
         i = 0
         for rx in self.board.rx:
             j = 0
@@ -90,41 +75,38 @@ class Simulation:
                 for trg in self.targets:
                     τ = (np.sqrt((rx.x - trg.x) ** 2 + (rx.y - trg.y) ** 2) + np.sqrt(
                         (trg.x - tx.x) ** 2 + (trg.y - tx.y) ** 2)) / self.c
-                    self.τs[i, j] = τ
+                    τs[i, j] = τ
                     j += 1
             i += 1
+        return τs
 
     def record(self):
-        nrx = len(self.board.rx)
-        n = self.Tc / self.Te
-        xif = np.zeros((nrx + 1, n))
-        t = np.arange(self.cnt*self.Tc, self.cnt*self.Tc + self.Tc + self.Te, self.Te)
-        xif[0, 0:n] = t
-        for i in range(1, nrx + 1):
-            for τ in self.τs[i]:
-                f = τ * self.S
-                phi = 2 * np.pi * np.fc * τ
-                xif[i, 0:n] += np.exp(2 * np.pi * f * t + phi)
+        ns = self.Tc / self.Te  # nombre de samples par chirp, dimension x
+        nc = self.T / self.Tc  # nombre de de chirps, dimension y
+        nrx = self.nchan  # nombre de channels, dimension z
+        xif = np.zeros((ns , nc, nrx))
+        for j in range(nc):
+            t = np.arange(j*self.Tc, (j+1)*self.Tc+ self.Te, self.Te)
+            τs = self.process()
+            self.move()
+            for k in range(nrx):
+                for τ in τs[k]:
+                    f = τ * self.S
+                    phi = 2 * np.pi * np.fc * τ
+                    xif[0:ns+1, j, k] += np.exp(2 * np.pi * f * t + phi)
 
         return xif
 
-    def clearτs(self):
-        self.self.τs = np.zeros((len(self.board.rx), len(self.board.tx) * len(self.targets)))
-
     def simulation(self):
         with open('record.txt', 'w') as file:
-            for k in range(self.T):
-                self.process()
-                xif = self.record()
-                self.clearτs()
-                self.move()
-                self.cnt +=1
-                print(xif)
-                # for j in range(len(xif[0])):
-                #     for i in range(len(xif)):
-                #         file.write(xif[i,j])
-                #     file.write('\n')
+            xif = self.record()
+            for i in range(len(xif[0, 0])):
+                for j in range(xif[0]):
+                    for k in range(xif):
+                        file.write(xif[i, j, k])
+                    file.write('\n')
+                file.write('\n')
 
-        return
+        return xif
 
 
