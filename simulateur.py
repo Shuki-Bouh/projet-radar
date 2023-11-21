@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+from parametre import *
 
 class Tx:
 
@@ -38,7 +38,6 @@ class Board:
 
         for elt in lrx:
             self.rx.append(Rx(elt[0], elt[1]))
-        pass
 
 
 class Simulation:
