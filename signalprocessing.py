@@ -16,7 +16,7 @@ def range_calculation(cube):#,param_radar):
     c = 3
     Fs = 100
     try:    
-        ff1 = np.fft.fft(cube, axis=1)
+        ff1 = np.fft.fft(cube, axis=0) #fft selon les colonnes
         freq = np.fft.fftfreq(cube.shape[0], d=1/Fs)
         rang = freq * c / (2 * B)
         ff2 = np.mean(ff1, axis=-1)  # Moyenne selon les antennes de réception
