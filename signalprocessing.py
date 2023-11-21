@@ -6,12 +6,13 @@ Created on Fri Nov 17 13:44:35 2023
 """
 import numpy as np
 import matplotlib.pyplot as plt
+import parametre
 
 def range_calculation(cube):#,param_radar):
 #    B = param_radar.bandwith
 #    c = param_radar.celerity
 #    Fs = param_radar.sampling_rate
-    """ prend en entré un cube corespondant  """
+    """ prend en entré un cube correspondant  """
     B = 4
     c = 3
     Fs = 100

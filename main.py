@@ -1,8 +1,6 @@
-# import struct
-#
-# print(struct.unpack('f', b'\xdb\x0fI@'))
-
 import simulateur as sml
+import matplotlib.pyplot as plt
+import signalprocessing as tds
 
 if __name__ == "__main__":
 
@@ -23,9 +21,7 @@ if __name__ == "__main__":
     print(simulation.board.tx)
     print(simulation.targets)
 
-    ts = simulation.process()
-    print(ts)
-
     xif = simulation.simulation()
-    print(xif)
+
+    tds.range_calculation(xif)
 
