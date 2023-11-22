@@ -1,17 +1,14 @@
 import simulateur as sml
+import numpy as np
 import matplotlib.pyplot as plt
 import signalprocessing as tds
 import parametre as prm
 
 if __name__ == "__main__":
 
-    simulation = sml.Simulation()
+    simulation = sml.Simulation(nrx=2)
 
-    ltx = [[0, 0]]
-    lrx = [[0, 0]]
-    simulation.board.add(ltx, lrx)
-
-    ltargets = [[0, 1.5, 0, 0]]
+    ltargets = [[1, 0, 0, 0], [2, np.pi/4, 0, 0]]
     simulation.addTrg(ltargets)
     print(simulation.board.rx)
     print(simulation.board.tx)

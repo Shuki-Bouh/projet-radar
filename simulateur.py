@@ -2,55 +2,53 @@ import numpy as np
 import parametre as prm
 class Tx:
 
-    def __init__(self, x, y, virtual=False):
+    def __init__(self, x, y, activated=False):
         self.x = x
         self.y = y
-        self.virtual = virtual
+        self.activated = activated
 
 
 class Rx:
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, activated=False):
         self.x = x
         self.y = y
+        self.activated = activated
 
 
 class Target:
-    def __init__(self, x0, y0, vx, vy):
-        self.x = x0
-        self.y = y0
-        self.vx = vx
-        self.vy = vy
+    def __init__(self, r, theta, phi, vr):
+        self.r = r
+        self.theta = theta
+        self.phi = phi
+        self.vr = vr
 
 
 class Board:
 
-    def __init__(self, Mimo=False):
-        self.rx = []
-        self.tx = []
+    def __init__(self, nrx=1, Mimo=False):
+        self.rx = [Rx(0,0,True), Rx(prm.λ,0), Rx(3*prm.λ/2,0), Rx(2*prm.λ,0)]
+        self.tx = [Tx(0,0,True), Tx(2*prm.λ,0)]
+        self.nrx = nrx
         self.Mimo = Mimo
-        self.nchan = 0
-
-    def add(self, ltx, lrx):  #ltx et lrx de la forme ltx = [[x1, y1], [x2, y2], ...]
-        for elt in ltx:
-            self.tx.append(Tx(elt[0], elt[1]))
-
-        for elt in lrx:
-            self.rx.append(Rx(elt[0], elt[1]))
-
+        self.nchan = 1
+        self.ntx = 1
+        if self.nrx == 2:
+            self.rx[1].activated = True
+            self.nchan = 2
+        elif self.nrx == 4:
+            for elt in self.rx:
+                elt.activated = True
+            self.nchan = 4
         if self.Mimo :
-            self.addMimo()
-
-        self.nchan = len(self.rx)
-
-    def addMimo(self):
-        pass
-
+            self.tx[1].activated = True
+            self.nchan = len(self.rx) * len(self.tx)
+            self.nchan = len(self.tx)
 
 class Simulation:
 
-    def __init__(self):  # attention on veut Te divisible par Tc et Tc divisible par Te
-        self.board = Board()
+    def __init__(self, nrx=1, Mimo=False):  # attention on veut Te divisible par Tc et Tc divisible par Te
+        self.board = Board(nrx, Mimo)
         self.targets = []
         self.Tc = prm.Tc
         self.Te = 1/prm.fs
@@ -59,28 +57,33 @@ class Simulation:
         self.S = prm.B / prm.Tc
         self.c = prm.c
         self.T = prm.Tc * prm.Nc
+        self.λ = prm.λ
 
-    def addTrg(self, ltargets):  #ltargets de la forme ltargets = [[x1, y1, vx1, vy1], [x2, y2, vx2, vy2], ...]
+    def addTrg(self, ltargets):  #ltargets de la forme ltargets = [[r, theta, phi, vr], [...], ...]
         for elt in ltargets:
             self.targets.append(Target(elt[0], elt[1], elt[2], elt[3]))
 
     def move(self):
         for trg in self.targets:
-            trg.x += trg.vx*self.Tc
-            trg.y += trg.vy*self.Tc
+            trg.r += trg.vr*self.Tc
 
     def process(self):  # rempli self.τs avec tout les τ associés
-        τs = np.zeros((self.board.nchan, len(self.board.tx) * len(self.targets)))
+        τs = np.zeros((self.board.nchan, self.board.ntx * len(self.targets)))
+        print(np.shape(τs))
+        d = self.λ/2
         i = 0
         for rx in self.board.rx:
-            j = 0
-            for tx in self.board.tx:
-                for trg in self.targets:
-                    τ = (np.sqrt((rx.x - trg.x) ** 2 + (rx.y - trg.y) ** 2) + np.sqrt(
-                        (trg.x - tx.x) ** 2 + (trg.y - tx.y) ** 2)) / self.c
-                    τs[i, j] = τ
-                    j += 1
-            i += 1
+            if rx.activated:
+                j, k = 0, 0
+                for tx in self.board.tx:
+                    if tx.activated:
+                        for trg in self.targets:
+                            τ = (2*trg.r + i*d*np.sin(trg.theta) + k*4*d*np.sin(trg.theta)) / self.c
+                            print(τ)
+                            τs[i, j] = τ
+                            j += 1
+                        k += 1
+                i += 1
         return τs
 
     def record(self):
@@ -94,6 +97,7 @@ class Simulation:
             self.move()
             for k in range(nrx):
                 for τ in τs[k]:
+                    # print(τ)
                     f = τ * self.S
                     phi = 2 * np.pi * self.fc * τ
                     arg = 2 * np.pi * f * t + phi
@@ -104,9 +108,9 @@ class Simulation:
     def simulation(self):
         with open('record.txt', 'w') as file:
             xif = self.record()
-            ns = len(xif)
-            nc = len(xif[0])
-            nchan = len(xif[0, 0])
+            ns = prm.Ns
+            nc = prm.Nc
+            nchan = self.board.nchan
             for k in range(nchan):
                 for j in range(nc):
                     for i in range(ns):
