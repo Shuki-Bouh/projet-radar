@@ -25,6 +25,7 @@ class Target:
 
 class Simulateur:
     def __init__(self):
+        
         self.liste_activated_r = None
         self.liste_activated_t = None
         self.N_r = None
@@ -74,23 +75,26 @@ class Simulateur:
     def calcul_temps(self):
         low_time = np.linspace(0,self.Nc*self.Tc,self.Nc, endpoint=False)  #le temps selon l echelle des chrips
         fast_time = np.linspace(0,self.Tc,self.Ns) #le temps selon l echelle de echantillonage
-        lt, ft = np.meshgrid(low_time, fast_time)
-        T = lt+ft #grille du temps 
-        self.Time = np.repeat(T[:, :, np.newaxis], self.Nch, axis=2) #tenseur de la grille du temps, 1 grille par antenne virtuelle
-        self.slow_time  =  np.repeat(lt[:, :, np.newaxis], self.Nch, axis=2) #tenseur de la grille du du temps cours (on considere la vitesse comme constante pendant un chrip et donc le temps pour la vitesse varie de chrip a chrip)
+        self.slow_time, fast_time,_ = np.meshgrid(low_time, fast_time, np.ones(self.Nch))
+        self.Time = self.slow_time+fast_time #grille du temps 
+#        self.Time = np.repeat(T[:, :, np.newaxis], self.Nch, axis=2) #tenseur de la grille du temps, 1 grille par antenne virtuelle
+#        self.slow_time  =  np.repeat(lt[:, :, np.newaxis], self.Nch, axis=2) #tenseur de la grille du du temps cours (on considere la vitesse comme constante pendant un chrip et donc le temps pour la vitesse varie de chrip a chrip)
         
     def calcul_offset(self):
         self.tensor_ddma = np.zeros((self.Ns,self.Nc,self.N_r*self.N_t))
-        i = 0
-        for pas in self.offset_ddma:
-            vecteur = np.linspace(0, 0 + (pas * (self.Nc - 1)), self.Nc) % (2*np.pi) #liste des dephasage a chaque chirp pour une certaine antenne d'emmision
-            mat = np.meshgrid(vecteur, np.zeros((self.Ns)))[0]  #sous forme de grille 
-            self.tensor_ddma[:,:,self.N_r*i:self.N_r*(i+1)] = np.repeat(mat[:, :, np.newaxis],self.N_r , axis=2) #sous frome de tenseur (1 grille par antenne virtuelle), les couche sous la forme TXi1,Rxj1|TXi1,Rxj2|TXi1,Rxj3|TXi2,Rxj1|TXi2,Rxj2|TXi2,Rxj3...
-            i = i+1
+#        i = 0
+        D = np.linspace(0, 0 + (self.offset_ddma * (self.Nc - 1)), self.Nc) %(2*np.pi)
+        L = D.reshape(self.Nc,1,self.N_t)
+        self.tensor_ddma = np.repeat(np.transpose(np.tile(L, (1, self.Ns, 1)), axes = (1,0,2)),repeats=self.N_r, axis=2)
+        
+#        for pas in self.offset_ddma:
+#            vecteur = np.linspace(0, 0 + (pas * (self.Nc - 1)), self.Nc) % (2*np.pi) #liste des dephasage a chaque chirp pour une certaine antenne d'emmision
+#            mat = np.meshgrid(vecteur, np.zeros((self.Ns)))[0]  #sous forme de grille 
+#            self.tensor_ddma[:,:,self.N_r*i:self.N_r*(i+1)] = np.repeat(mat[:, :, np.newaxis],self.N_r , axis=2) #sous frome de tenseur (1 grille par antenne virtuelle), les couche sous la forme TXi1,Rxj1|TXi1,Rxj2|TXi1,Rxj3|TXi2,Rxj1|TXi2,Rxj2|TXi2,Rxj3...
+#            i = i+1
         
     def calcul_sample(self):
         for tg in self.target:
-            print(tg.num)
             tg.calcul_difference_marche(self.channel)
             A = np.broadcast_to(tg.sequence, (self.Ns, self.Nc, self.N_r*self.N_t))
             if self.ddma == 1:
@@ -110,48 +114,44 @@ class Simulateur:
         mask_3d = np.fliplr(mask_3d)
         self.res_temp = mask_3d * self.res_temp
         
-#        ll = np.fliplr(l)
-#        l = np.transpose(nnn)
-#        nnn = np.repeat(nn[:,:,None], 11 ,axis = 2)
-#        nn = np.kron(matrice,np.ones((Nr,1)))
-#        matrice = np.tile(matrice,Nc//Nt)
-#        np.eye(Nt)[::-1]
+
             
             
-    def channels_2_antennas(self):
-#        indices = np.arange(self.N_r*self.N_t)
-#        new_indices = np.array([])
+    def channels_2_antennas(self):       
+        indices = np.arange(self.N_r*self.N_t).reshape((self.N_t, self.N_r)).T.flatten()
+        self.res_temp = self.res_temp[:,:,indices].reshape((self.Ns,self.Nc,-1,self.N_t))
+        self.res = np.sum(self.res_temp, axis = 3)
+        
 #        for k in range(self.N_r):
-#            new_indices =  np.concatenate([new_indices,indices[k::self.N_r]])
-##            new_indices = np.concatenate([indices[0::self.N_r], indices[1::self.N_r],indices[2::self.N_r], indices[3::self.N_r]])
-#        self.res_temp = self.res_temp[:,:,new_indices]
-#        
-        for k in range(self.N_r):
-            self.res[:,:,k] = np.sum(self.res_temp[:,:,k::self.N_t], axis = 2)
+#            self.res[:,:,k] = np.sum(self.res_temp[:,:,k::self.N_t], axis = 2)
         
     def run(self, liste_activatd_r,liste_activatd_t, mode,liste_targt):
-        self.liste_activated_r = sorted(liste_activatd_r)
-        self.liste_activated_t = sorted(liste_activatd_t)
-        self.N_r = len(self.liste_activated_r)
-        self.N_t = len(self.liste_activated_t) 
+        if not (self.liste_activated_r == liste_activatd_r and self.liste_activated_t == liste_activatd_t):
+            self.liste_activated_r = sorted(liste_activatd_r)
+            self.liste_activated_t = sorted(liste_activatd_t)
+            self.N_r = len(self.liste_activated_r)
+            self.N_t = len(self.liste_activated_t) 
+            self.channel = np.zeros((2, len(self.liste_activated_r)*len(self.liste_activated_t))) #coordone des antennes virtuelles
+            self.Nch = self.channel.shape[1]
+            self.calcul_channel()
+        self.Nc = prm.Nc
         self.ddma = 0
         self.dtma = 0
         self.tensor_ddma = None
         self.offset_ddma = np.zeros((self.N_t))
         self.target = liste_targt
         self.mode = mode
-        if self.mode[0] == 'DTMA':
+        if self.mode[0] == 'TDMA':
             self.dtma = 1
             self.Nc = self.Nc * self.N_t
         if self.mode[0] == 'DDMA':
             self.ddma = 1
             self.offset_ddma = self.mode[1]
-        self.channel = np.zeros((2, len(self.liste_activated_r)*len(self.liste_activated_t))) #coordone des antennes virtuelles
-        self.Nch = self.channel.shape[1]
+        
+        
         self.res_temp = np.zeros((self.Ns,self.Nc,self.N_r*self.N_t) , dtype=complex)
         self.res = np.zeros((self.Ns,self.Nc,self.N_r), dtype=complex)
         
-        self.calcul_channel()
         self.calcul_temps()
         
         if self.ddma == 1:
