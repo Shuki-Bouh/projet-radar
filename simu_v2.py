@@ -78,8 +78,9 @@ class Simulateur:
         self.c = prm.c
         self.fc = prm.fc
         self.lamb = prm.λ
-        self.Time = None
+        #self.Time = None
         self.slow_time = None
+        self.fast_time = None
         self.result_channel = None
         self.result_true_antenna = None
         
@@ -110,8 +111,8 @@ class Simulateur:
         if self.ddma == 1:
             self.slow_time, fast_time,_ = np.meshgrid(low_time, fast_time, np.ones(self.Nch))
         else:
-            self.slow_time, fast_time,_ = np.meshgrid(low_time, fast_time, np.ones(self.N_r))
-        self.Time = self.slow_time+fast_time #grille du temps 
+            self.slow_time, self.fast_time,_ = np.meshgrid(low_time, fast_time, np.ones(self.N_r))
+        #self.Time = self.slow_time+self.fast_time #grille du temps 
 
     def calcul_offset(self):
         """
@@ -152,7 +153,7 @@ class Simulateur:
                 R = tg.r + tg.vr * self.slow_time + 0.5 * self.d * diff_marche_tensor
 
             self.result_channel +=tg.Amp * np.exp(
-                1j * ((2 * np.pi * 2 * self.S / self.c * self.Time + 4 * np.pi / self.lamb) * R))
+                1j * ((2 * np.pi * 2 * self.S / self.c * self.fast_time + 4 * np.pi / self.lamb) * R))
     def res_tdma(self):
         """
         Résultats pour le mode TDMA.
