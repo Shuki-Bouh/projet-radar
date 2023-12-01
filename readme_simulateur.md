@@ -25,6 +25,7 @@ simu = Simulateur()
 ```python
 Simulateur.run(liste_activated_r, liste_activated_t, mode, liste_target)
 ```
+renvoie le cube radar
 - `liste_activatd_r` (liste de int): Liste des antennes de réception activées. 
 - `liste_activatd_t` (liste de int): Liste des antennes de transmission activées. 
 - `mode` (liste): 
