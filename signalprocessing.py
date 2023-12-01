@@ -86,4 +86,35 @@ def calculate_doppler_fft(fft1):
         print(f"Erreur: {e}")
         return None
     
-    return fft2   
+    return fft2
+
+def plot_range_doppler(fft2, mode= [None,None]):
+    """Affiche le spectre en vitesse (Doppler) de la transformée de Fourier.
+
+    Entrée:
+    - fft2 : np array de forme (Ns, Nc, Nr*Nt) - le résultat de la transformée de Fourier en vitesse (Doppler)
+    si tdm mode = ['TDMA', nombre de recepteur]
+    si ddma, mode = ['DDMA', np.array des offsets (en radiant), de shape (nombre de Tx,)] pas encore implemente
+    """
+    lamb = prm.λ 
+    Tc = prm.Tc
+    c = prm.c
+    S = prm.S
+    nb_tdma_tx = 1
+    if mode[0] == 'TDMA':
+        nb_tdma_tx = mode[1]
+        
+    fft_abs = np.abs(fft2)
+    fft_abs_norm = fft_abs /np.max(fft_abs, axis=(1,0), keepdims=True)
+    fft_abs_norm_mean = np.mean(fft_abs_norm, axis=2) # Moyenne selon les antennes de réception
+    fft_abs_norm_mean = np.fft.fftshift(fft_abs_norm_mean, axes=1)
+    speed = np.arange(-fft2.shape[1]//2,fft2.shape[1]//2 )* lamb/(2*Tc*fft2.shape[1])/nb_tdma_tx  #le tdma divise la vitesse max par le nombre d antenne Tx
+    rang = np.arange(fft2.shape[0]) * c / (2 * S * Tc)
+    
+    
+    plt.figure(figsize=(8, 6))
+    plt.imshow(fft_abs_norm_mean,extent=[np.min(speed),np.max(speed),np.min(rang),np.max(rang)], origin = 'bottom')
+    plt.title("2d fft range velocity")
+    plt.xlabel("Vitesse (m/s)")
+    plt.ylabel("range (m)")
+    plt.show()
