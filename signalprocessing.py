@@ -6,6 +6,8 @@ Created on Fri Nov 17 13:44:35 2023
 """
 import numpy as np
 import matplotlib.pyplot as plt
+import threading
+from parametre import *
 
 def range_calculation(cube):#,param_radar):
 #    B = param_radar.bandwith
