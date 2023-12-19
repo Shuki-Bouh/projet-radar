@@ -41,8 +41,8 @@ class Target:
         Les différences de marche sont stockées dans l'attribut diff_marche de l'objet Target.
         """
 
-        self.diff_marche = np.sum((channel - channel[:,0].reshape((2,1)))*np.array([np.sin(self.theta),-np.cos(self.theta)]).reshape(2,1), axis = 0)
-        #+(np.abs(channel - channel[:,np.argmax(channel[1])].reshape((2,1))))[1]*np.sin(self.phi) En prenant en compte l elevation, a voir dans le cas 3d si pas un pythagore qui traine.
+        self.diff_marche = np.sum((channel - channel[:,0].reshape((2,1)))*np.array([np.sin(self.theta)*np.cos(self.phi),-np.sin(self.phi)]).reshape(2,1), axis = 0)
+        
         #prend le reseau virtuelle, prend l antenne la plus a gauche et calcul les differences de marche par rapport a elle.                  
 
 
