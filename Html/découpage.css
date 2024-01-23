@@ -1,0 +1,26 @@
+h1 {
+    font-size: 18px;
+    color : blue;
+}
+
+div {
+    border: solid;
+    border-color: darkblue;
+    block-size: auto;
+    width: 40%;
+}
+
+div#sim {
+    position: relative;
+    float: left;
+}
+
+div#trai {
+    float: right;
+}
+
+div#carte{
+    position: relative;
+    left: 0;
+    bottom: 0;
+}

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Traitement du signal</title>
+</head>
+<body>
+
+<div>
+  <h1>Passage Rx réelles aux channels (mimo)</h1>
+  <p>
+    <b>Entrée : </b>Cube de dimension Nc * Ne * Nr de la simulation en configuration mimo avec l'une des techniques suivantes
+    Deux techniques différentes qui ne peuvent pas cohabiter :
+    <ul>
+      <li>Le DDMA</li>
+      <li>Le TDMA</li>
+    </ul>
+    <b>Sortie : </b>Un cube de dimension Ne * Nc * (Nr . Nt)
+  </p>
+</div>
+
+<div>
+  <h1>Traitement des données</h1>
+  <p><b>Entrée :</b> cube</p>
+  <div>
+    <h2>Range</h2>
+    <p><b>Entrée : </b>Cube</p>
+    <p><b>Sortie : </b>np.array de complexes de dimension Ne</p>
+  </div>
+
+  <div>
+    <h2>Range vitesse</h2>
+    <p><b>Entrée : </b>Cube</p>
+    <p><b>Sortie : </b>Matrice de dimension Ne * Nc</p>
+  </div>
+</div>
+
+<div>
+  <h1>Angle</h1>
+  <p><b>Entrée : </b>Cube<br>
+     <b>Sortie : </b>
+  </p>
+</div>
+
+<div></div>
+</body>
+</html>
