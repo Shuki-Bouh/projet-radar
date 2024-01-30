@@ -19,16 +19,17 @@ class Target:
     - vr : Vitesse radiale de la cible.
     - Amp : Amplitude du signal de la cible (par défaut 1).
     """
-    nm = 0
+    numberTarget = 0  # numéro de la cible
+
     def __init__(self, r, theta, phi, vr,Amp=1):
         self.r = r
         self.theta = theta
         self.phi = phi
         self.vr = vr
         self.diff_marche = None
-        self.num = Target.nm
+        self.num = Target.numberTarget
         self.Amp = Amp
-        Target.nm += 1
+        Target.numberTarget += 1
         
     def calcul_difference_marche(self, channel):
         """
@@ -41,9 +42,10 @@ class Target:
         Les différences de marche sont stockées dans l'attribut diff_marche de l'objet Target.
         """
 
-        self.diff_marche = np.sum((channel - channel[:,0].reshape((2,1)))*np.array([np.sin(self.theta)*np.cos(self.phi),-np.sin(self.phi)]).reshape(2,1), axis = 0)
+        self.diff_marche = np.sum((channel - channel[:,0].reshape((2,1))) *
+                                  np.array([np.sin(self.theta) * np.cos(self.phi), - np.sin(self.phi)]).reshape(2,1), axis = 0)
         
-        #prend le reseau virtuelle, prend l antenne la plus a gauche et calcul les differences de marche par rapport a elle.                  
+        # Prend le reseau virtuelle, prend l'antenne la plus a gauche et calcul les differences de marche par rapport a elle.
 
 
 class Simulateur:
