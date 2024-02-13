@@ -136,7 +136,7 @@ plt.show()
 class Traitement_fft():
 
     def __init__(self, mode):
-        self.__mode = mode
+        self.mode = mode
         self.nbTx = 3
         return
 
@@ -155,6 +155,17 @@ class Traitement_fft():
     @fft_doppler.setter
     def fft_doppler(self, fft) -> None:
         self.__fft_range = fft
+
+    @property
+    def mode(self):
+        return self.__mode
+
+    @mode.setter
+    def mode(self, new_mode):
+        self.__mode = new_mode
+        if new_mode == 'TDMA':
+            self.nbTx = 13445
+
 
     def calculate_range_fft(self, cube: np.array) -> None:
         """Calcule la transformée de Fourier en distance du cube radar.
