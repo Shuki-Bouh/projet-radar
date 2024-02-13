@@ -3,7 +3,7 @@ fc = 77 * 10 ** 9
 Nt = 1
 Nr = 4
 Nc = 128
-Nf = 30
+Nf = 200
 Ns = 256
 isReal = False
 

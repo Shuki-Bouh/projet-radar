@@ -1,10 +1,11 @@
 import unittest
 import numpy as np
 from read_data import convertFile
+from parametre import *
 
 
 
-class TestReshaper(unittest.TestCase):
+class TestConvertFile(unittest.TestCase):
     """Pour ce test, on crée une matrice de dimensions : Nsample * Nchirps * NRx * NFrame de la forme :
        M[a, b, c, d] = dcba -> 1234 correspond à la première frame, deuxième Rx, troisième chirp et quatrième sample
        Ainsi, si pour tout a, b, c et d M[a, b, c, d] = dcba, alors le big_reshape fonctionne
@@ -61,6 +62,15 @@ class TestReshaper(unittest.TestCase):
                         self.assertEqual(int(A[k, j, i, n]),(n + 1) * 1000 + (i + 1) * 100 + (j + 1) * 10 + k + 1)  # C'est un cas particulier
                     # qui permet de vérifier le bon fonctionnement de reshaper
 
+    def test_size_data(self):
+        converter = convertFile(numADCSample=Ns, numRx=Nr, numChirps=Nc, numFrame=Nf)
+        data_200 = converter.read("adc_data_200F_128C.bin", isReal=isReal)
+        self.assertEqual(len(data_200), Ns * Nr * Nc * Nf)
+        data_200 = converter.big_reshaper(data_200)
+        self.assertEqual(len(data_200[0,0,0]), Nf)
+        self.assertEqual(len(data_200[0,0]), Nr)
+        self.assertEqual(len(data_200[0]), Nc)
+        self.assertEqual(len(data_200), Ns)
 
 if __name__ == '__main__':
 
