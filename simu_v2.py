@@ -109,10 +109,12 @@ class Simulateur:
         low_time = np.linspace(0,self.Nc*self.Tc,self.Nc, endpoint=False)  #le temps selon l echelle des chrips
         fast_time = np.linspace(0,self.Tc,self.Ns) #le temps selon l echelle de l echantillonnage
         if self.ddma == 1:
-            self.slow_time, fast_time,_ = np.meshgrid(low_time, fast_time, np.ones(self.Nch))
+            print('oui')
+            self.slow_time, self.fast_time,_ = np.meshgrid(low_time, fast_time, np.ones(self.Nch))
         else:
+            print('non')
             self.slow_time, self.fast_time,_ = np.meshgrid(low_time, fast_time, np.ones(self.N_r))
-        #self.Time = self.slow_time+self.fast_time #grille du temps 
+        #self.Time = self.slow_time+self.fast_time #grille du temps
 
     def calcul_offset(self):
         """
@@ -151,9 +153,7 @@ class Simulateur:
                 R = tg.r + tg.vr * self.slow_time + 0.5 * self.d * diff_marche_tensor + 0.5 * self.ddma * self.tensor_ddma * self.lamb / (2 * np.pi)
             else:
                 R = tg.r + tg.vr * self.slow_time + 0.5 * self.d * diff_marche_tensor
-
-            self.result_channel +=tg.Amp * np.exp(
-                1j * ((2 * np.pi * 2 * self.S / self.c * self.fast_time + 4 * np.pi / self.lamb) * R))
+            self.result_channel +=tg.Amp * np.exp(1j * ((2 * np.pi * 2 * self.S / self.c * self.fast_time + 4 * np.pi / self.lamb) * R))
     def res_tdma(self):
         """
         Résultats pour le mode TDMA.
@@ -238,14 +238,12 @@ class Simulateur:
         if self.tdma !=1:
             self.result_channel = np.zeros((self.Ns,self.Nc,self.N_r*self.N_t) , dtype=complex)
         else:
-            self.result_channel = np.zeros((self.Ns,self.Nc,self.N_r) , dtype=complex)
+            self.result_channel = np.zeros((self.Ns,self.Nc,self.N_r), dtype=complex)
         self.result_true_antenna = np.zeros((self.Ns,self.Nc,self.N_r), dtype=complex)
         
         self.calcul_temps()
-        
         if self.ddma == 1:
             self.calcul_offset()
-            
         self.calcul_sample()
         
         if self.tdma == 1:

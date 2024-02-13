@@ -7,25 +7,25 @@ Created on Fri Nov 17 13:44:35 2023
 import numpy as np
 import matplotlib.pyplot as plt
 import parametre as prm
-import simmu_rdp as simp
+import simu_v2 as simp
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.signal import convolve2d
 from matplotlib import cm
 
 
-tg1 = simp.Target(10,np.deg2rad(0),0,0,1)
-
-tg2 = simp.Target(10,np.deg2rad(45),0,7,1)
-
-tg3 = simp.Target(30,np.deg2rad(-15),0,0.5,0.5)
-
-tg4 = simp.Target(35,np.deg2rad(-60),0,0.2,0.5)
-
-tg5 = simp.Target(40,np.deg2rad(-30),0,-1,0.9)
-
-simu = simp.Simulateur()
-
-simu.run([1,2,3,4],[1,2,3],["DDMA",np.deg2rad(np.array([0,90,270]))],[tg1,tg2])
+# tg1 = simp.Target(10,np.deg2rad(0),0,0,1)
+#
+# tg2 = simp.Target(10,np.deg2rad(45),0,7,1)
+#
+# tg3 = simp.Target(30,np.deg2rad(-15),0,0.5,0.5)
+#
+# tg4 = simp.Target(35,np.deg2rad(-60),0,0.2,0.5)
+#
+# tg5 = simp.Target(40,np.deg2rad(-30),0,-1,0.9)
+#
+# simu = simp.Simulateur()
+#
+# simu.run([1,2,3,4],[1,2,3],["DDMA",np.deg2rad(np.array([0,90,270]))],[tg1,tg2])
 
 #
 
@@ -113,7 +113,7 @@ def calculate_doppler_fft(fft1):
     
     return fft2   
 
-A = 0
+# A = 0
 #cubetd = TDMA_antenna_2_channel(cube1,2)
 #ff1 = calculate_range_fft(cubetd)
 #plot_range_spectrum(ff1)
@@ -207,10 +207,10 @@ def plot_doppler_spectrum(fft2, mode= [None,None]):
     return data
 
 #cube_channel = TDMA_antenna_2_channel(simu.result_true_antenna,3)
-ff_range = calculate_range_fft(simu.result_true_antenna)
+# ff_range = calculate_range_fft(simu.result_true_antenna)
 #plot_range_spectrum(ff_range)
-ff_dop = calculate_doppler_fft(ff_range)
-A = plot_doppler_spectrum(ff_dop, ["DDMA",np.deg2rad(np.array([0,90,270]))])
+# ff_dop = calculate_doppler_fft(ff_range)
+# A = plot_doppler_spectrum(ff_dop, ["DDMA",np.deg2rad(np.array([0,90,270]))])
 
 def circular_2d_cfar(falsealmar, nb_guard, nb_reference, ff2d_im):
     #circulaire
@@ -234,26 +234,26 @@ def circular_2d_cfar(falsealmar, nb_guard, nb_reference, ff2d_im):
     result = conv<ff2d_im
     return result,conv
 
-detec,conv = circular_2d_cfar(10**-4,1,2,A)
-speed = np.arange(-conv.shape[1]//2,conv.shape[1]//2 )* prm.λ/(2*prm.Tc*conv.shape[1]) 
-rang = np.arange(conv.shape[0]) * 3e8 / (2 * prm.S * prm.Tc)    
-x = speed
-y = rang
-x, y = np.meshgrid(x, y)    
-# Créer une figure en 3D
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-
-# Afficher la surface
-ax.plot_surface(x, y, conv, cmap='viridis')
-
-# Ajouter des étiquettes aux axes
-ax.set_xlabel('vitesse (m/s)')
-ax.set_ylabel('range (m)')
-#    ax.set_zlabel('Axe Z')
-
-# Afficher la figure
-plt.show()    
+# detec,conv = circular_2d_cfar(10**-4,1,2,A)
+# speed = np.arange(-conv.shape[1]//2,conv.shape[1]//2 )* prm.λ/(2*prm.Tc*conv.shape[1])
+# rang = np.arange(conv.shape[0]) * 3e8 / (2 * prm.S * prm.Tc)
+# x = speed
+# y = rang
+# x, y = np.meshgrid(x, y)
+# # Créer une figure en 3D
+# fig = plt.figure()
+# ax = fig.add_subplot(111, projection='3d')
+#
+# # Afficher la surface
+# ax.plot_surface(x, y, conv, cmap='viridis')
+#
+# # Ajouter des étiquettes aux axes
+# ax.set_xlabel('vitesse (m/s)')
+# ax.set_ylabel('range (m)')
+# #    ax.set_zlabel('Axe Z')
+#
+# # Afficher la figure
+# plt.show()
     
     
     
