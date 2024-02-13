@@ -5,43 +5,27 @@ import numpy as np
 
 class convertFile:
 
-    def __init__(self, numRx):
-        self.numADCSamples = 256
+    def __init__(self, numADCSample=256, numRx=4, numChirps=128, numFrame=8):
+        self.numADCSamples = numADCSample
         self.numADCBits = 16
         self.numRX = numRx
-        self.numChirps = 0
+        self.numChirps = numChirps
+        self.numFrame = numFrame
         return
 
 
     def read(self, fileName, isReal=True):
 
 
-        with open(fileName, 'rb') as data:  # Il sagit de connaître la taille du fichier qu'on va lire
-            fileSize = len(data.readlines())
-
-        with open(fileName, 'rb') as data:  # On remplie ADC data des données (int16 donc on lit 2 bytes à la fois
-
-            adcData = []
-            for k in range(fileSize):
-                c = int.from_bytes(data.readline(2), "big", signed=True)  # Le logiciel fourni des bytes en big endian
-                adcData.append(c)
+        adcData = np.fromfile(fileName, dtype=np.int16)
+        fileSize = len(adcData)
 
         if isReal:
-            self.numChirps = fileSize // self.numADCSamples // self.numRX + 1  # On n'obtient pas l'arrondi, on obtient
-            # systématiquement la valeur supérieure,
-            # Cette astuce permet de remplir les données manquantes du dernier chirps par des 0
-            for k in range(abs(self.numADCSamples * self.numRX * self.numChirps - fileSize)):
-                adcData.append(0)
-
             ldvs = adcData.copy()
-
-
     
         else:  # Complexes
-            self.numChirps = fileSize // 2 // self.numADCSamples // self.numRX + 1
-            for k in range(abs(self.numADCSamples * self.numRX * self.numChirps - fileSize)):
-                adcData.append(0)
-            ldvs = np.zeros(fileSize / 2)
+            fileSize //= 2
+            ldvs = np.zeros(fileSize)
     
             counter = 0
             for i in range(fileSize - 1, 4):
@@ -51,9 +35,16 @@ class convertFile:
 
         return ldvs
 
-    def reshaper(self, ldvs):
+    def dataFrameNo(self, ldvs, no):
+        dPFrame1 = no * self.numADCSamples * self.numChirps * self.numRX
+        dPFrame2 = (no + 1) * self.numADCSamples * self.numChirps * self.numRX
+        ret = ldvs[dPFrame1:dPFrame2]
+
+        return ret
+
+    def little_reshaper(self, ldvs):
         """
-                    Les données sont transmises de la façon suivante :
+                    Les données sont transmises de la façon suivante pour une frame :
                     Chirps 0 :
                         Rx0 : sample 0
                         Rx0 : sample 1
@@ -90,9 +81,13 @@ class convertFile:
 
         return ret
 
+    def big_reshaper(self, ldvs):
+        """On fait le little reshaper pour toutes les frames (on se place en dim 4)"""
 
-if __name__ == '__main__':
-    conver = convertFile()
-    data = conver.read('adc_data.bin')
-    data = conver.reshaper(data)
-    print(data.shape)
+        ret = np.zeros((self.numADCSamples, self.numChirps, self.numRX, self.numFrame))
+
+        for i in range(self.numFrame):
+            data_frame = self.dataFrameNo(ldvs, i)  # Les données du ie frame
+            ret[:, :, :, i] = self.little_reshaper(data_frame)  # On reshape les données d'une frame qu'on place dans le ième frame
+
+        return ret
