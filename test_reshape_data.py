@@ -1,7 +1,6 @@
 import unittest
 import numpy as np
 from read_data import convertFile
-from parametre import *
 
 
 
