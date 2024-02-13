@@ -1,4 +1,7 @@
 import numpy as np
+import threading
+from time import time
+import multiprocessing
 
 
 
@@ -20,16 +23,25 @@ class convertFile:
 
         if isReal:
             ldvs = adcData.copy()
-    
-        else:  # Complexes
-            fileSize //= 2
-            ldvs = np.zeros(fileSize)
-    
+
+        else:
+            ldvs = np.zeros(fileSize // 2, dtype=complex)
             counter = 0
-            for i in range(fileSize - 1, 4):
-                ldvs[counter] = adcData[i], adcData[i + 2] * 1j
-                ldvs[counter + 1] = adcData[i+1], adcData[i + 3] * 1j
-                counter += 2
+
+            nombre_de_coeurs = multiprocessing.cpu_count()
+
+            pool = multiprocessing.Pool(processes=nombre_de_coeurs)
+
+            nb_proc = self.numFrame
+            sections = [adcData[t * fileSize // nb_proc: (t + 1) * fileSize // nb_proc] for t in
+                        range(nb_proc)]
+
+            res = pool.map(self.complex_threading, sections)
+
+            pool.close()
+            pool.join()
+
+            ldvs = np.concatenate(res)
 
         return ldvs
 
@@ -72,7 +84,10 @@ class convertFile:
 
         ldvs = np.reshape(ldvs, (self.numADCSamples, self.numRX, self.numChirps), order="F")
 
-        ret = np.zeros((self.numADCSamples, self.numChirps, self.numRX))
+        if type(ldvs[0,0,0]) is np.int16:
+            ret = np.zeros((self.numADCSamples, self.numChirps, self.numRX))
+        else:
+            ret = np.zeros((self.numADCSamples, self.numChirps, self.numRX), dtype=complex)
 
         for i in range(self.numRX):
             ret[:, :, i] = ldvs[:, i, :]
@@ -82,10 +97,24 @@ class convertFile:
     def big_reshaper(self, ldvs):
         """On fait le little reshaper pour toutes les frames (on se place en dim 4)"""
 
-        ret = np.zeros((self.numADCSamples, self.numChirps, self.numRX, self.numFrame))
+        if type(ldvs[0]) is np.int16:
+            ret = np.zeros((self.numADCSamples, self.numChirps, self.numRX, self.numFrame))
+        else:
+            ret = np.zeros((self.numADCSamples, self.numChirps, self.numRX, self.numFrame), dtype=complex)
 
         for i in range(self.numFrame):
             data_frame = self.dataFrameNo(ldvs, i)  # Les données du ie frame
             ret[:, :, :, i] = self.little_reshaper(data_frame)  # On reshape les données d'une frame qu'on place dans le ième frame
 
         return ret
+
+    @staticmethod
+    def complex_threading(data):
+        counter = 0
+        fileSize = len(data)
+        ldvs_inter = np.zeros(fileSize//2, dtype=complex)
+        for i in range(0, fileSize - 1, 4):
+                ldvs_inter[counter] = data[i] + data[i + 2] * 1j
+                ldvs_inter[counter + 1] = data[i + 1] + data[i + 3] * 1j
+                counter += 2
+        return ldvs_inter
