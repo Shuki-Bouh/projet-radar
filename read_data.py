@@ -15,7 +15,6 @@ class convertFile:
 
     def read(self, fileName, isReal=True):
 
-
         adcData = np.fromfile(fileName, dtype=np.int16)
         fileSize = len(adcData)
 
