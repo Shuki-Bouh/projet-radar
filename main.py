@@ -15,14 +15,29 @@ if __name__ == '__main__':
     frame = data[:,:,:,100]
     print(frame.shape)
     print(data.shape)
-    fft1 = sgp.calculate_range_fft(frame)
-    sgp.plot_range_spectrum(fft1)
+    # fft1 = sgp.calculate_range_fft(frame)
+    # sgp.plot_range_spectrum(fft1)
 
-    # range = frame[:,0,0]
-    # fft = sgp.calculate_range_fft(np.abs(range))
-    # fft_abs = np.abs(fft)
-    # fft_abs_norm = fft_abs / np.max(fft_abs, axis=0)
-    # plt.plot(fft_abs_norm)
-    # plt.show()
+    plt.figure(1)
+    fftr = sgp.calculate_range_fft(frame)
+    fftr_abs = np.abs(fftr)
+    fftr_abs_norm = fftr_abs / np.max(fftr_abs, axis=0)
+    fftr_abs_norm_mean = np.mean(fftr_abs_norm, axis=(1, 2))
+    rang = np.arange(fftr.shape[0]) * c / (2 * S * Tc)
+    plt.plot(rang,fftr_abs_norm_mean)
+
+    plt.figure(2)
+    fftd = sgp.calculate_range_fft(fftr)
+    fftd_abs = np.abs(fftd)
+    fftd_abs_norm = fftd_abs / np.max(fftd_abs, axis=(1, 0), keepdims=True)
+    fftd_abs_norm_mean = np.mean(fftd_abs_norm, axis=2)  # Moyenne selon les antennes de réception
+    fftd_abs_norm_mean = np.fft.fftshift(fftd_abs_norm_mean, axes=1)
+    speed = np.arange(-fftd.shape[1] // 2, fftd.shape[1] // 2) * λ / (2 * Tc * fftd.shape[1]) # le tdma divise la vitesse max par le nombre d antenne Tx
+    rang = np.arange(fftd.shape[0]) * c / (2 * S * Tc)
+    plt.imshow(fftd_abs_norm_mean, extent=[np.min(speed), np.max(speed), np.min(rang), np.max(rang)], origin='lower')
+
+    plt.show()
+
+
 
 
