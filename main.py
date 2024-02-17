@@ -1,12 +1,12 @@
 from parametre import *
 from read_data import convertFile
-import pickle as pk
 from time import time
 import signalprocessing as sgp
 import numpy as np
 from matplotlib import pyplot as plt
 
 if __name__ == '__main__':
+    a = time()
     converter = convertFile(numADCSample=Ns, numRx=Nt*Nr, numChirps=Nc, numFrame=Nf)
     data = converter.read('adc_data_200F_128C.bin', isReal=isReal)
     data = converter.big_reshaper(data)
@@ -37,6 +37,8 @@ if __name__ == '__main__':
     plt.imshow(fftd_abs_norm_mean, extent=[np.min(speed), np.max(speed), np.min(rang), np.max(rang)], origin='lower')
 
     plt.show()
+    b = time()
+    print(b-a)
 
 
 
