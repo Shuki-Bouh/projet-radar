@@ -109,10 +109,8 @@ class Simulateur:
         low_time = np.linspace(0,self.Nc*self.Tc,self.Nc, endpoint=False)  #le temps selon l echelle des chrips
         fast_time = np.linspace(0,self.Tc,self.Ns) #le temps selon l echelle de l echantillonnage
         if self.ddma == 1:
-            print('oui')
             self.slow_time, self.fast_time,_ = np.meshgrid(low_time, fast_time, np.ones(self.Nch))
         else:
-            print('non')
             self.slow_time, self.fast_time,_ = np.meshgrid(low_time, fast_time, np.ones(self.N_r))
         #self.Time = self.slow_time+self.fast_time #grille du temps
 
