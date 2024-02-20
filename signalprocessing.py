@@ -196,7 +196,60 @@ class SignalProcessing:
 if __name__ == '__main__':
     pass
     
-    
+def CFAR2D(pfa, nb_guard, nb_reference, ff2d_im):
+
+    mask = np.ones(((nb_guard+nb_reference)*2+1,(nb_guard+nb_reference)*2+1))
+    mask[nb_reference:-nb_reference, nb_reference:-nb_reference] = 0
+
+    N = np.sum(mask)
+    mask = mask / N
+    alpha = N*(pfa**(-1/N) - 1)
+
+    mu = convolve2d(ff2d_im, mask, mode='same', boundary='wrap')
+    T = mu*alpha
+    result = T < ff2d_im
+    return result, mu, mask
+
+
+def Music(x,y,frame):
+    # y_snap = frame[2,:,:].T.conj()
+    print(frame[x,y,:].shape)
+    y_snap = frame[x,y,:].T.conj().reshape((4,1))
+    M = frame.shape[2] #nb de capteurs
+    N = 180 * 4 + 1 #nb de points = précision
+    d_norm = 1 / 8 #D/lambda
+
+    thetas = np.linspace(-np.pi / 2, np.pi / 2, N)
+    pos_sensors = np.arange(M)[:, None]
+
+    # L= frame.shape[1]
+    L = 1 #nb de snaps
+    Syy = y_snap @ y_snap.T.conj() / L
+    print(np.shape(Syy))
+
+    A = np.exp(-2 * 1j * np.pi * d_norm * pos_sensors * np.sin(thetas))
+    print(np.shape(A))
+
+    U, lamda, _ = np.linalg.svd(Syy)
+    lamdalog = 10 * np.log10(lamda)
+    T = np.min(lamdalog) + np.abs(np.max(lamdalog) - np.min(lamdalog))/2
+    Sc = sum(1 for valeur in lamdalog if valeur > T)
+    print(Sc)
+    P_music = 1 / np.diag((A.T.conj() @ U[:, Sc - M:] @ U[:, Sc - M:].T.conj() @ A)).real
+    P_music = P_music / max(P_music)
+    plt.figure()
+    plt.subplot(211)
+    plt.plot(thetas, P_music ** 0.5, label="MUSIC")
+    plt.grid()
+    plt.legend()
+    plt.subplot(212)
+    plt.plot(lamdalog, "xk", label="valeurs propres")
+    plt.axhline(y=T, color='red', linestyle='--', label='Threshold')
+    plt.plot(T)
+    # plt.legend()
+
+    return Syy
+
     
     
     
