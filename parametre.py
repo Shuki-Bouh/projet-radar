@@ -6,6 +6,7 @@ Nc = 128  # nb de chirp par frame
 Nf = 200  # nb de frame
 Ns = 256  # nb de sample par chirp
 isReal = False
+mode = 'SIMO'
 
 Tc = 60.17 * 10 ** -6 # durée d'un chirp
 S = 15.015*10**6/10**-6  # slope
