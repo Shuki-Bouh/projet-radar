@@ -1,8 +1,5 @@
 import numpy as np
-from time import time
 import multiprocessing
-
-
 
 class convertFile:
 
@@ -14,7 +11,6 @@ class convertFile:
         self.numFrame = numFrame
         return
 
-
     def read(self, fileName, isReal=True):
 
         adcData = np.fromfile(fileName, dtype=np.int16)
@@ -25,22 +21,9 @@ class convertFile:
 
         else:
             ldvs = np.zeros(fileSize // 2, dtype=complex)
-            counter = 0
 
-            nombre_de_coeurs = multiprocessing.cpu_count()
-
-            pool = multiprocessing.Pool(processes=nombre_de_coeurs)
-
-            nb_proc = self.numFrame
-            sections = [adcData[t * fileSize // nb_proc: (t + 1) * fileSize // nb_proc] for t in
-                        range(nb_proc)]
-
-            res = pool.map(self.complex_threading, sections)
-
-            pool.close()
-            pool.join()
-
-            ldvs = np.concatenate(res)
+            ldvs[::2] = adcData[::4] + adcData[2::4] * 1j
+            ldvs[1::2] = adcData[1::4] + adcData[3::4] * 1j
 
         return ldvs
 
@@ -106,14 +89,3 @@ class convertFile:
             ret[:, :, :, i] = self.little_reshaper(data_frame)  # On reshape les données d'une frame qu'on place dans le ième frame
 
         return ret
-
-    @staticmethod
-    def complex_threading(data):
-        counter = 0
-        fileSize = len(data)
-        ldvs_inter = np.zeros(fileSize//2, dtype=complex)
-        for i in range(0, fileSize - 1, 4):
-                ldvs_inter[counter] = data[i] + data[i + 2] * 1j
-                ldvs_inter[counter + 1] = data[i + 1] + data[i + 3] * 1j
-                counter += 2
-        return ldvs_inter

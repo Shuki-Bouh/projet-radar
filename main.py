@@ -1,7 +1,7 @@
 from parametre import *
 from read_data import convertFile
 from time import time
-import signalprocessing as sgp
+from signalprocessing import SignalProcessing
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -9,17 +9,22 @@ if __name__ == '__main__':
     a = time()
     converter = convertFile(numADCSample=Ns, numRx=Nt*Nr, numChirps=Nc, numFrame=Nf)
     data = converter.read('adc_data_200F_128C.bin', isReal=isReal)
+
+
     data = converter.big_reshaper(data)
-    print(data[0,0,0,0])
 
-    frame = data[:,:,:,100]
-    print(frame.shape)
-    print(data.shape)
-    # fft1 = sgp.calculate_range_fft(frame)
-    # sgp.plot_range_spectrum(fft1)
+    frame = data[:, :, :, 100]
 
-    plt.figure(1)
+    # fft_r = sgp.calculate_range_fft(frame)
+    # sgp.plot_range_spectrum(fft_r)
+
+    sgp = SignalProcessing()
+
     fftr = sgp.calculate_range_fft(frame)
+    sgp.plot_range_spectrum(fftr)
+    fftd = sgp.calculate_doppler_fft(fftr)
+    sgp.plot_doppler_spectrum(fftd)
+
     fftr_abs = np.abs(fftr)
     fftr_abs_norm = fftr_abs / np.max(fftr_abs, axis=0)
     fftr_abs_norm_mean = np.mean(fftr_abs_norm, axis=(1, 2))
