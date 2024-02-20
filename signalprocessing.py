@@ -5,42 +5,26 @@ from scipy.signal import convolve2d
 
 
 
-# tg1 = simp.Target(10,np.deg2rad(0),0,0,1)
-#
-# tg2 = simp.Target(10,np.deg2rad(45),0,7,1)
-#
-# tg3 = simp.Target(30,np.deg2rad(-15),0,0.5,0.5)
-#
-# tg4 = simp.Target(35,np.deg2rad(-60),0,0.2,0.5)
-#
-# tg5 = simp.Target(40,np.deg2rad(-30),0,-1,0.9)
-#
-# simu = simp.Simulateur()
-#
-# simu.run([1,2,3,4],[1,2,3],["DDMA",np.deg2rad(np.array([0,90,270]))],[tg1,tg2])
-
-#
-
 class SignalProcessing:
-    def __init__(self, mode="classique", *args):
+    def __init__(self, mode="SIMO", *args):
         self.mode = mode
         if mode == 'DDMA':
             self.offset_phase = args
         return
 
-    def TDMA_antenna_2_channel(self, cube: np.array, nt: int) -> np.array:
-        """
-        Transforme le cube radar en ajoutant une dimension pour les canaux d'antennes.
-
-        :param np.array cube: np array de forme (Ns, nt*Nc, Nr) - le cube radar obtenu avec TDMA
-                (Nc : nombre de chirp émis par chaque antenne,
-                 Ns : nombre d'échantillons)
-        :param int nt: nombre d'antennes d'émission actives
-
-        :return: np array de forme (Ns, Nc, Nr*Nt) - le cube radar avec les canaux dans la dernière dimension
-        """
-        cube = cube.reshape((cube.shape[0], -1, cube.shape[2] * nt))
-        return cube
+    # def TDMA_antenna_2_channel(self, cube: np.array, nt: int) -> np.array:
+    #     """
+    #     Transforme le cube radar en ajoutant une dimension pour les canaux d'antennes.
+    #
+    #     :param np.array cube: np array de forme (Ns, nt*Nc, Nr) - le cube radar obtenu avec TDMA
+    #             (Nc : nombre de chirp émis par chaque antenne,
+    #              Ns : nombre d'échantillons)
+    #     :param int nt: nombre d'antennes d'émission actives
+    #
+    #     :return: np array de forme (Ns, Nc, Nr*Nt) - le cube radar avec les canaux dans la dernière dimension
+    #     """
+    #     cube = cube.reshape((cube.shape[0], -1, cube.shape[2] * nt))
+    #     return cube
 
     def calculate_range_fft(self, cube: np.array) -> np.array:
         """Calcule la transformée de Fourier en distance du cube radar.
@@ -49,11 +33,18 @@ class SignalProcessing:
 
         :return: array de forme (Ns, Nc, Nr*Nt) - le cube transformé de Fourier en distance
         """
-        try:
-            fft_r = np.fft.fft(cube, axis = 0) # FFT selon chaque colonne
-        except Exception as e:
-            raise e
+        fft_r = np.fft.fft(cube, axis = 0) # FFT selon chaque colonne
         return fft_r
+
+    def calculate_doppler_fft(self, fft_r: np.array) -> np.array:
+        """Calcule la transformée de Fourier en vitesse (Doppler) du cube radar deja transformé de fourrie en distance.
+
+        :param np.array fft_r : array de forme (Ns, Nc, Nr*Nt) - le cube transformé de Fourier en distance
+
+        :return: array de forme (Ns, Nc, Nr*Nt) - le cube transformé de Fourier en vitesse (Doppler)
+        """
+        fft_d = np.fft.fft(fft_r, axis=1)
+        return fft_d
 
     def plot_range_spectrum(self, fft_r: np.array) -> None:
         """Affiche le spectre linéaire et en dB de la transformée de Fourier en distance.
@@ -80,38 +71,25 @@ class SignalProcessing:
 
         plt.show()
 
-    def calculate_doppler_fft(self, fft_r: np.array) -> np.array:
-        """Calcule la transformée de Fourier en vitesse (Doppler) du cube radar deja transformé de fourrie en distance.
 
-        :param np.array fft_r : array de forme (Ns, Nc, Nr*Nt) - le cube transformé de Fourier en distance
 
-        :return: array de forme (Ns, Nc, Nr*Nt) - le cube transformé de Fourier en vitesse (Doppler)
-        """
+    # def DDMA_antenna2_channel(self, fft_d: np.array, offset_phase: np.array):
+    #
+    #     """Txi__1_Rxj_1....Txi_1__Rxj_n|Txi_2__Rxj_1....Txi_2__Rxj_n|..."""
+    #
+    #     res_chanel = np.zeros((fft_d.shape[0], fft_d.shape[1], offset_phase.shape[0] * fft_d.shape[2]), dtype=complex)
+    #     deph = np.arange(0, fft_d.shape[1]) * np.pi * 2 / fft_d.shape[1]
+    #     shilft_array = - np.argmin(np.abs(deph - offset_phase[:, None]), axis = 1)
+    #
+    #     for k in range(shilft_array.shape[0]):
+    #         res_chanel[:, :, k * fft_d.shape[2]:(k+1) * fft_d.shape[2]] = np.roll(fft_d, shilft_array[k], axis=1)
+    #     return res_chanel
 
-        try:
-            fft_d = np.fft.fft(fft_r, axis=1)
-        except Exception as e:
-            raise e
-
-        return fft_d
-
-    def DDMA_antenna2_channel(self, fft_d: np.array, offset_phase: np.array):
-
-        """Txi__1_Rxj_1....Txi_1__Rxj_n|Txi_2__Rxj_1....Txi_2__Rxj_n|..."""
-
-        res_chanel = np.zeros((fft_d.shape[0], fft_d.shape[1], offset_phase.shape[0] * fft_d.shape[2]), dtype=complex)
-        deph = np.arange(0, fft_d.shape[1]) * np.pi * 2 / fft_d.shape[1]
-        shilft_array = - np.argmin(np.abs(deph - offset_phase[:, None]), axis = 1)
-
-        for k in range(shilft_array.shape[0]):
-            res_chanel[:, :, k * fft_d.shape[2]:(k+1) * fft_d.shape[2]] = np.roll(fft_d, shilft_array[k], axis=1)
-        return res_chanel
-
-    def channel_Tx_2_channel_Rx(self, cube, N_t, N_r):
-        """permet de passer de la respresetation Txi__1_Rxj_1....Txi_1__Rxj_n|Txi_2__Rxj_1....Txi_2__Rxj_n|...
-          à Rxj_1__Txi_1....Rxj_1__Txi_m|Txi_2__Rxj_1....Txi_2__Rxj_n| dans le cube"""
-        indices = np.arange(cube.shape[2]).reshape((N_t, N_r)).T.flatten()
-        return cube[:,:,indices]
+    # def channel_Tx_2_channel_Rx(self, cube, N_t, N_r):
+    #     """permet de passer de la respresetation Txi__1_Rxj_1....Txi_1__Rxj_n|Txi_2__Rxj_1....Txi_2__Rxj_n|...
+    #       à Rxj_1__Txi_1....Rxj_1__Txi_m|Txi_2__Rxj_1....Txi_2__Rxj_n| dans le cube"""
+    #     indices = np.arange(cube.shape[2]).reshape((N_t, N_r)).T.flatten()
+    #     return cube[:,:,indices]
 
     def plot_doppler_spectrum(self, fft_d):
         """Affiche le spectre en vitesse (Doppler) de la transformée de Fourier.
@@ -171,29 +149,40 @@ class SignalProcessing:
 
         # Afficher la figure
         plt.show()
-        plt.show()
         return data
 
-    def circular_2d_cfar(self, falsealmar, nb_guard, nb_reference, ff2d_im):
-        #circulaire
-        mask = np.zeros(((nb_guard+nb_reference) * 2 + 1, (nb_guard + nb_reference) * 2 + 1))
-        x, y = np.meshgrid(np.arange(0, nb_guard+nb_reference + 1), np.arange(0, nb_guard + nb_reference + 1))
-        V = x ** 2 + y ** 2 <= (((nb_guard + nb_reference) * 2 + 1) / 2) ** 2
-        mask[nb_guard + nb_reference:, nb_guard + nb_reference:] = V
-        mask[:nb_guard + nb_reference, nb_guard + nb_reference:] = V[1:,:][::-1,:]
-        mask[:, :nb_guard + nb_reference] = mask[:,nb_guard + nb_reference + 1:][:, ::-1]
 
-        mask[nb_reference:-nb_reference, nb_reference: -nb_reference] = 0
+    def cfar2D(self,pfa : float,nb_guard : int ,nb_reference : int,frame : np.array) -> np.array:
+        return
 
-        N = np.sum(mask) #number of reference cells
-        alpha = N * (falsealmar ** (-1 / N) - 1)
-        mask = mask / N
-        conv = convolve2d(ff2d_im, mask, mode='same', boundary='wrap') * alpha
-        result = conv < ff2d_im
-        return result, conv
+    def music(self,x : int,y : int ,frame : np.array):
+        return
 
+    def DDMA_antenna_2_channels(self,frame : np.array) -> np.array :
+        return
 
+    def MIMO_artefact_processing(self,x : int, y : int, frame : np.array):
+        return
+
+    def active_plot(self,data : np.array):
+        return
+
+    def active_cfar_plot(self,data : np.array):
+        return
 if __name__ == '__main__':
+    # tg1 = simp.Target(10,np.deg2rad(0),0,0,1)
+    #
+    # tg2 = simp.Target(10,np.deg2rad(45),0,7,1)
+    #
+    # tg3 = simp.Target(30,np.deg2rad(-15),0,0.5,0.5)
+    #
+    # tg4 = simp.Target(35,np.deg2rad(-60),0,0.2,0.5)
+    #
+    # tg5 = simp.Target(40,np.deg2rad(-30),0,-1,0.9)
+    #
+    # simu = simp.Simulateur()
+    #
+    # simu.run([1,2,3,4],[1,2,3],["DDMA",np.deg2rad(np.array([0,90,270]))],[tg1,tg2])
     pass
     
     
