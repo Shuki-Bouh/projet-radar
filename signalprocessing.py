@@ -61,14 +61,14 @@ class SignalProcessing:
         # En linéaire
         plt.subplot(211)
         plt.plot(rang, fft_abs_norm_mean)
-        plt.set_ylabel("Spectre linéaire")
-        plt.set_title("Spectre linéaire de la transformée de Fourier en distance dans le domaine des distances")
+        plt.ylabel("Spectre linéaire")
+        plt.title("Spectre linéaire de la transformée de Fourier en distance dans le domaine des distances")
 
         # En dB
         plt.subplot(212)
         plt.plot(rang, 20 * np.log10(fft_abs_norm_mean))
-        plt.set_ylabel("Spectre de puissance (dB)")
-        plt.set_xlabel("Distance (m)")
+        plt.ylabel("Spectre de puissance (dB)")
+        plt.xlabel("Distance (m)")
 
         plt.show()
         return None
@@ -148,7 +148,7 @@ class SignalProcessing:
 
         mu = convolve2d(fft2D_abs_norm_mean_shift, mask, mode='same', boundary='wrap')
         T = mu * alpha
-        result = T < fft2D
+        result = T < fft2D_abs_norm_mean_shift
 
         # pfa = [1e-10,0.00001,0.0001,0.001,0.01,0.1,0.5,0.9]
         # plt.figure()
@@ -177,11 +177,13 @@ class SignalProcessing:
         speed = np.arange(-cfar.shape[1] // 2, cfar.shape[1] // 2) * λ / (2 * Tc * cfar.shape[1])  # le tdma divise la vitesse max par le nombre d antenne Tx
         rang = np.arange(cfar.shape[0]) * c / (2 * S * Tc)
 
+        plt.figure()
         plt.imshow(cfar, extent=[np.min(speed), np.max(speed), np.min(rang), np.max(rang)], origin='lower')
         plt.title("2DCFAR")
         plt.xlabel("speed (m/s)")
         plt.ylabel("range (m)")
         plt.colorbar()
+        plt.show()
         return None
 
     def music(self,x : int,y : int ,frame : np.array):
@@ -235,8 +237,15 @@ class SignalProcessing:
         return Syy
 
 
-    def DDMA_antenna_2_channels(self,frame : np.array) -> np.array :
-        return
+    def DDMA_antenna_2_channels(self,fft2D : np.array,offset_phase : np.array) -> np.array :
+        res_chanel = np.zeros((fft2D.shape[0], fft2D.shape[1], offset_phase.shape[0] * fft2D.shape[2]), dtype=complex)
+        deph = np.arange(0, fft2D.shape[1]) * np.pi * 2 / fft2D.shape[1]
+        shilft_array = - np.argmin(np.abs(deph - offset_phase[:, None]), axis = 1)
+
+        for k in range(shilft_array.shape[0]):
+            res_chanel[:, :, k * fft2D.shape[2]:(k+1) * fft2D.shape[2]] = np.roll(fft2D, shilft_array[k], axis=1)
+        return res_chanel
+
 
     def MIMO_artefact_processing(self,x : int, y : int, frame : np.array):
         return
@@ -254,8 +263,8 @@ class SignalProcessing:
 
         for i in range(data.shape[3]):
             frame = data[:, :, :, i]
-            fftr = self.calculate_range_fft(frame)
-            fft2D = self.calculate_doppler_fft(fftr)
+            fftr = self.range_fft(frame)
+            fft2D = self.doppler_fft(fftr)
 
             fft2D_abs = np.abs(fft2D)
             fft2D_abs_norm = fft2D_abs / np.max(fft2D_abs, axis=(1, 0), keepdims=True)
@@ -286,14 +295,10 @@ class SignalProcessing:
             fftr = self.range_fft(frame)
             fft2D = self.doppler_fft(fftr)
 
-            fft2D_abs = np.abs(fft2D)
-            fft2D_abs_norm = fft2D_abs / np.max(fft2D_abs, axis=(1, 0), keepdims=True)
-            fft2D_abs_norm_mean = np.mean(fft2D_abs_norm, axis=2)  # Moyenne selon les antennes de réception
-            fft2D_abs_norm_mean_shift = np.fft.fftshift(fft2D_abs_norm_mean, axes=1)
             speed = np.arange(-fft2D.shape[1] // 2, fft2D.shape[1] // 2) * λ / (2 * Tc * fft2D.shape[1])  # le tdma divise la vitesse max par le nombre d antenne Tx
             rang = np.arange(fft2D.shape[0]) * c / (2 * S * Tc)
 
-            result = self.cfar2D(pfa, nb_guard, nb_ref, fft2D_abs_norm_mean_shift)
+            result = self.cfar2D(pfa, nb_guard, nb_ref, fft2D)
 
             ax.clear()
 

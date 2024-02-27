@@ -1,6 +1,6 @@
 fc = 77 * 10 ** 9  # fréquence basse
 
-Nt = 1  #n b de Tx
+Nt = 1  #nb de Tx
 Nr = 4  # nb de Rx
 Nc = 128  # nb de chirp par frame
 Nf = 200  # nb de frame
@@ -9,9 +9,10 @@ isReal = False
 mode = 'SIMO'
 
 Tc = 60.17 * 10 ** -6 # durée d'un chirp
-S = 15.015*10**6/10**-6  # slope
+S = 15.015*10**6/10**-6  # slope S =
 B = Tc*S  # Bandwidth
 
 fs = Ns/Tc  # fréquence d'échantillonage
 c = 3e8  # célérité
 λ = c/fc  # longueur d'onde basse
+
