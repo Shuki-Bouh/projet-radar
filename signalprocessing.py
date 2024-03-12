@@ -4,7 +4,6 @@ from parametre import *
 from scipy.signal import convolve2d
 
 
-
 class SignalProcessing:
     def __init__(self, mode="SIMO", *args):
         self.mode = mode
