@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from parametre import *
 from scipy.signal import convolve2d
+from collections import Counter
 
 
 
@@ -44,6 +45,7 @@ class SignalProcessing:
         :return: array de forme (Ns, Nc, Nr*Nt) - le cube transformé de Fourier en vitesse (Doppler)
         """
         fft_d = np.fft.fft(fft_r, axis=1)
+        fft_d = np.fft.fftshift(fft_d, axes=1)
         return fft_d
 
     def plot_range_spectrum(self, fft_r: np.array) -> None:
@@ -103,15 +105,15 @@ class SignalProcessing:
         fft2D_abs = np.abs(fft2D)
         fft2D_abs_norm = fft2D_abs / np.max(fft2D_abs, axis=(1, 0), keepdims=True)
         fft2D_abs_norm_mean = np.mean(fft2D_abs_norm, axis=2)  # Moyenne selon les antennes de réception
-        fft2D_abs_norm_mean_shift = np.fft.fftshift(fft2D_abs_norm_mean, axes=1)
+        # fft2D_abs_norm_mean_shift = np.fft.fftshift(fft2D_abs_norm_mean, axes=1)
 
         speed = np.arange(-fft2D.shape[1] // 2, fft2D.shape[1] // 2) * λ / (
                     2 * Tc * fft2D.shape[1])  # le tdma divise la vitesse max par le nombre d antenne Tx
         rang = np.arange(fft2D.shape[0]) * c / (2 * S * Tc)
 
-        plt.figure(figsize=(8, 6))
+        plt.figure()
 
-        plt.imshow(fft2D_abs_norm_mean_shift, extent=[np.min(speed), np.max(speed), np.min(rang), np.max(rang)], origin='lower')
+        plt.imshow(fft2D_abs_norm_mean, extent=[np.min(speed), np.max(speed), np.min(rang), np.max(rang)], origin='lower')
 
         if self.mode == "DDMA":
             plt.title("2d fft range velocity " + "DDMA " + str(len(self.offset_phase)) + " antennes TX")
@@ -121,12 +123,12 @@ class SignalProcessing:
             plt.title("2d fft range velocity SIMO")
         plt.xlabel("Vitesse (m/s)")
         plt.ylabel("range (m)")
+        plt.colorbar()
 
-        plt.show()
         return None
 
 
-    def cfar2D(self,pfa : float,nb_guard : int ,nb_reference : int,fft2D : np.array) -> np.array:
+    def cfar2D(self,pfa : float,nb_guard : int ,nb_reference : int,fft2D : np.array, mean=True) -> np.array:
         """
 
         :param pfa:
@@ -135,10 +137,6 @@ class SignalProcessing:
         :param fft2D:
         :return:
         """
-        fft2D_abs = np.abs(fft2D)
-        fft2D_abs_norm = fft2D_abs / np.max(fft2D_abs, axis=(1, 0), keepdims=True)
-        fft2D_abs_norm_mean = np.mean(fft2D_abs_norm, axis=2)  # Moyenne selon les antennes de réception
-        fft2D_abs_norm_mean_shift = np.fft.fftshift(fft2D_abs_norm_mean, axes=1)
 
         mask = np.ones(((nb_guard + nb_reference) * 2 + 1, (nb_guard + nb_reference) * 2 + 1))
         mask[nb_reference:-nb_reference, nb_reference:-nb_reference] = 0
@@ -146,9 +144,19 @@ class SignalProcessing:
         mask = mask / N
         alpha = N * (pfa ** (-1 / N) - 1)
 
-        mu = convolve2d(fft2D_abs_norm_mean_shift, mask, mode='same', boundary='wrap')
+        fft2D_abs = np.abs(fft2D)
+        fft2D_abs_norm = fft2D_abs / np.max(fft2D_abs, axis=(1, 0), keepdims=True)
+        if mean :
+            fft2D_abs_norm_mean = np.mean(fft2D_abs_norm, axis=2)  # Moyenne selon les antennes de réception
+            mu = convolve2d(fft2D_abs_norm_mean, mask, mode='same', boundary='wrap')
+        else :
+            fft2D_abs_norm_mean = fft2D_abs_norm
+            mu = np.zeros_like(fft2D_abs_norm_mean)
+            for i in range(fft2D.shape[2]):
+                mu[:, :, i] = convolve2d(fft2D_abs_norm_mean[:, :, i], mask, mode='same', boundary='wrap')
+
         T = mu * alpha
-        result = T < fft2D_abs_norm_mean_shift
+        result = T < fft2D_abs_norm_mean
 
         # pfa = [1e-10,0.00001,0.0001,0.001,0.01,0.1,0.5,0.9]
         # plt.figure()
@@ -183,23 +191,13 @@ class SignalProcessing:
         plt.xlabel("speed (m/s)")
         plt.ylabel("range (m)")
         plt.colorbar()
-        plt.show()
+
         return None
 
-    def music(self,x : int,y : int ,frame : np.array):
+    def music(self, fft2D : np.array, cfar : np.array) -> list :
 
-        # indices_1 = np.where(result == 1)
-        # # Afficher les coordonnées
-        # coordonnees_1 = list(zip(indices_1[0], indices_1[1]))
-        # print(coordonnees_1)
-        # for i in range(len(coordonnees_1)):
-        #     (x, y) = coordonnees_1[i]
-        #     Syy = sgp.Music(x,y,data)
-
-        # y_snap = frame[2,:,:].T.conj()
-        print(frame[x, y, :].shape)
-        y_snap = frame[x, y, :].T.conj().reshape((4, 1))
-        M = frame.shape[2]  # nb de capteurs
+        targets = []
+        M = fft2D.shape[2]  # nb de capteurs
         N = 180 * 4 + 1  # nb de points = précision
         d_norm = 1 / 8  # D/lambda
 
@@ -208,47 +206,93 @@ class SignalProcessing:
 
         # L= frame.shape[1]
         L = 1  # nb de snaps
-        Syy = y_snap @ y_snap.T.conj() / L
-        print(np.shape(Syy))
 
         A = np.exp(-2 * 1j * np.pi * d_norm * pos_sensors * np.sin(thetas))
-        print(np.shape(A))
 
-        U, lamda, _ = np.linalg.svd(Syy)
-        lamdalog = 10 * np.log10(lamda)
-        T = np.min(lamdalog) + np.abs(np.max(lamdalog) - np.min(lamdalog)) / 2
-        Sc = sum(1 for valeur in lamdalog if valeur > T)
-        print(Sc)
+        indices = np.where(cfar == 1)
+        # Afficher les coordonnées
+        coordonnees = list(zip(indices[0], indices[1]))
+        print(coordonnees)
+        for i in range(len(coordonnees)):
+            (x, y) = coordonnees[i]
+            # fft2D = np.fft.fftshift(fft2D, axes=1)
+            y_snap = fft2D[x, y, :].reshape((4, 1))
 
-        P_music = 1 / np.diag((A.T.conj() @ U[:, Sc - M:] @ U[:, Sc - M:].T.conj() @ A)).real
-        P_music = P_music / max(P_music)
+            Syy = y_snap @ y_snap.T.conj() / L
 
-        plt.figure()
-        plt.subplot(211)
-        plt.plot(thetas, P_music ** 0.5, label="MUSIC")
-        plt.grid()
-        plt.legend()
-
-        plt.subplot(212)
-        plt.plot(lamdalog, "xk", label="valeurs propres")
-        plt.axhline(y=T, color='red', linestyle='--', label='Threshold')
-        plt.plot(T)
-
-        return Syy
+            U, lamda, _ = np.linalg.svd(Syy)
+            lamdalog = 10 * np.log10(lamda)
+            # T = np.min(lamdalog) + np.abs(np.max(lamdalog) - np.min(lamdalog)) / 2
+            # Sc = sum(1 for valeur in lamdalog if valeur > T)
+            Sc = 1
 
 
-    def DDMA_antenna_2_channels(self,fft2D : np.array,offset_phase : np.array) -> np.array :
+            P_music = 1 / np.diag((A.T.conj() @ U[:, Sc - M:] @ U[:, Sc - M:].T.conj() @ A)).real
+            P_music = P_music / max(P_music)
+
+            targets.append((x,y,thetas[np.argmax(P_music)]))
+
+            # plt.figure()
+            # plt.subplot(211)
+            # plt.plot(thetas, P_music ** 0.5, label="MUSIC")
+            # plt.grid()
+            # plt.legend()
+
+            # plt.subplot(212)
+            # plt.plot(lamdalog, "xk", label="valeurs propres")
+            # plt.axhline(y=T, color='red', linestyle='--', label='Threshold')
+            # plt.plot(T)
+
+        return np.array(targets)
+
+
+    def DDMA_antenna_2_channels(self,fft2D : np.array, offset_phase : np.array) -> np.array :
         res_chanel = np.zeros((fft2D.shape[0], fft2D.shape[1], offset_phase.shape[0] * fft2D.shape[2]), dtype=complex)
         deph = np.arange(0, fft2D.shape[1]) * np.pi * 2 / fft2D.shape[1]
         shilft_array = - np.argmin(np.abs(deph - offset_phase[:, None]), axis = 1)
+        print(shilft_array)
 
         for k in range(shilft_array.shape[0]):
             res_chanel[:, :, k * fft2D.shape[2]:(k+1) * fft2D.shape[2]] = np.roll(fft2D, shilft_array[k], axis=1)
         return res_chanel
 
+    def MIMO_artefact_processing(self, frame : np.array, cfar3D) :
+        indices = np.where(cfar3D == 1)
+        targets = np.array(list(zip(indices[0], indices[1])))
+        comptage = Counter(targets)
+        targets_filtres = [tuple_element for tuple_element, count in comptage.items() if count == frame.shape[2]]
+        return targets_filtres
 
-    def MIMO_artefact_processing(self,x : int, y : int, frame : np.array):
-        return
+    def hanning_windowing(self, frame : np.array) -> np.array:
+        return np.apply_along_axis(np.hanning, axis=0, arr=(np.apply_along_axis(np.hanning, axis=1, arr=frame)))
+
+    def plot_music(self, targets):
+        rang = np.arange(Ns) * c / (2 * S * Tc)
+        angles = targets[:,2]
+        # angles= [valeur for valeur in angles if np.abs(valeur) < 1.57]
+        distances = targets[:,0] * c / (2 * S * Tc)
+        print(angles)
+        print(distances)
+
+
+        # Créer un graphique polaire avec un quart seulement
+        fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+        ax.plot(angles, distances, marker='x', linestyle='')
+
+        # Limiter l'affichage à un quart
+        ax.set_thetamin(-45)
+        ax.set_thetamax(45)
+        ax.set_theta_offset(np.pi / 2)
+        ax.set_theta_direction(-1)
+
+        # Ajouter des annotations
+        # for angle, distance in zip(angles, distances):
+        #     ax.text(angle, distance, f'({np.degrees(angle):.0f}°, {round(distance,2)})', ha='right')
+
+        # Ajuster les paramètres pour un meilleur affichage
+        plt.title("Graphique Polaire - Un Quart du Graphique")
+        plt.grid(True)
+        return None
 
     def on_key(event):
         if event.key == 'q':
@@ -313,8 +357,7 @@ class SignalProcessing:
         plt.close()
         return
 
-    def plot_music(self):
-        return
+
 
 if __name__ == '__main__':
 
