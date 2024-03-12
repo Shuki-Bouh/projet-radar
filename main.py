@@ -16,7 +16,7 @@ if __name__ == '__main__':
     frame = data[:, :, :, 19]
     print(frame.shape)
 
-    tg1 = simp.Target(10,np.deg2rad(0),0,0,1)
+    tg1 = simp.Target(30,np.deg2rad(0),0,0,1)
 
     tg2 = simp.Target(10,np.deg2rad(10),0,7,1)
 
@@ -28,17 +28,16 @@ if __name__ == '__main__':
 
     simu = simp.Simulateur()
 
-    trg = [simp.Target(10 + 5*i,np.deg2rad(-20 + i*10),0,-30+15*i,1) for i in range(6)]
-    t = [-20 + 10*i for i in range(6)]
-    print(t)
+    # trg = [simp.Target(10 + 5*i,np.deg2rad(-20 + i*10),0,-30+15*i,1) for i in range(6)]
+    # t = [-20 + 10*i for i in range(6)]
+    # print(t)
 
-    # frame = simu.run([1,2,3,4],[1],["SIMO"],trg)
+    frame = simu.run([1,2,3,4],[1],["SIMO"],[tg1])
 
     # frame = simu.run([1,2,3,4],[1,2,3],["DDMA",np.deg2rad(np.array([0, 90, 270]))],[tg1])
     # np.deg2rad(np.array([0, 90, 270]))
 
     sigproc = sgp.SignalProcessing()
-
 
     fftr = sigproc.range_fft(frame)
     fftd = sigproc.doppler_fft(fftr)
@@ -50,6 +49,7 @@ if __name__ == '__main__':
     sigproc.plot_doppler_spectrum(fftd)
     sigproc.plot_cfar2D(cfar)
     targets = sigproc.music(fftd, cfar)
+    print(targets)
     # print(targets[:,2])
     # print(np.rad2deg(1.57079))
     # print(np.deg2rad(45))
@@ -73,6 +73,12 @@ if __name__ == '__main__':
 
     #sigproc.active_fft2D_plot(data)
     #sigproc.active_cfar_plot(data,1e-3,1,3)
+
+    print(dmax)
+    print(dres)
+    print(vmax)
+    print(vres)
+    print(thetares)
 
 
 

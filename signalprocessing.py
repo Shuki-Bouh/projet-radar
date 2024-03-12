@@ -199,7 +199,7 @@ class SignalProcessing:
         targets = []
         M = fft2D.shape[2]  # nb de capteurs
         N = 180 * 4 + 1  # nb de points = précision
-        d_norm = 1 / 8  # D/lambda
+        d_norm = 1 / 2 # D/lambda
 
         thetas = np.linspace(-np.pi / 2, np.pi / 2, N)
         pos_sensors = np.arange(M)[:, None]
